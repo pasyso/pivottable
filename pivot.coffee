@@ -158,8 +158,8 @@ callWithJQuery ($) ->
 
     locales = 
         en: 
-            aggregators: aggregators
-            renderers: renderers
+#            aggregators: aggregators
+#            renderers: renderers
             localeStrings: 
                 renderError: "An error occurred rendering the PivotTable results."
                 computeError: "An error occurred computing the PivotTable results."
@@ -171,6 +171,31 @@ callWithJQuery ($) ->
                 totals: "Totals" #for table renderer
                 vs: "vs" #for gchart renderer
                 by: "by" #for gchart renderer
+                and: "and" #for gchart renderer
+            rendererTrans:
+                "Table":          "Table"
+                "Table Barchart": "Table Barchart"
+                "Heatmap":        "Heatmap"
+                "Row Heatmap":    "Row Heatmap"
+                "Col Heatmap":    "Col Heatmap"
+            aggregatorTrans:
+                "Count":                "Count"
+                "Count Unique Values":  "Count Unique Values"
+                "List Unique Values":   "List Unique Values"
+                "Sum":                  "Sum"
+                "Integer Sum":          "Integer Sum"
+                "Average":              "Average"
+                "Minimum":              "Minimum"
+                "Maximum":              "Maximum"
+                "Sum over Sum":         "Sum over Sum"
+                "80% Upper Bound":      "80% Upper Bound"
+                "80% Lower Bound":      "80% Lower Bound"
+                "Sum as Fraction of Total":     "Sum as Fraction of Total"
+                "Sum as Fraction of Rows":      "Sum as Fraction of Rows"
+                "Sum as Fraction of Columns":   "Sum as Fraction of Columns"
+                "Count as Fraction of Total":   "Count as Fraction of Total"
+                "Count as Fraction of Rows":    "Count as Fraction of Rows"
+                "Count as Fraction of Columns": "Count as Fraction of Columns"
 
     #dateFormat deriver l10n requires month and day names to be passed in directly
     mthNamesEn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -562,9 +587,10 @@ callWithJQuery ($) ->
         if not locales[locale]?
             locale = "en"
         defaults =
+            lang: locale
             derivedAttributes: {}
-            aggregators: locales[locale].aggregators
-            renderers: locales[locale].renderers
+            aggregators: aggregators
+            renderers: renderers
             hiddenAttributes: []
             menuLimit: 200
             cols: [], rows: [], vals: []
@@ -572,11 +598,13 @@ callWithJQuery ($) ->
             inclusions: {}
             unusedAttrsVertical: 85
             autoSortUnusedAttrs: false
-            rendererOptions: localeStrings: locales[locale].localeStrings
+            rendererOptions: localeStrings: locales[locale].localeStrings, lang: locale
             onRefresh: null
             filter: -> true
             sorters: -> 
             localeStrings: locales[locale].localeStrings
+#            rendererTrans: locales[locale].rendererTrans
+#            aggregatorTrans: locales[locale].aggregatorTrans
 
         existingOpts = @data "pivotUIOptions"
         if not existingOpts? or overwrite
@@ -605,13 +633,13 @@ callWithJQuery ($) ->
 
             #renderer control
             rendererControl = $("<td>")
-
+            rendererTrans = locales[locale].rendererTrans
             renderer = $("<select>")
                 .addClass('pvtRenderer')
                 .appendTo(rendererControl)
                 .bind "change", -> refresh() #capture reference
             for own x of opts.renderers
-                $("<option>").val(x).html(x).appendTo(renderer)
+                $("<option>").val(x).html(rendererTrans[x]).appendTo(renderer)
 
 
             #axis list, including the double-click menu
@@ -712,11 +740,11 @@ callWithJQuery ($) ->
             tr1 = $("<tr>").appendTo(uiTable)
 
             #aggregator menu and value area
-
+            aggrTrans = locales[locale].aggregatorTrans
             aggregator = $("<select>").addClass('pvtAggregator')
                 .bind "change", -> refresh() #capture reference
             for own x of opts.aggregators
-                aggregator.append $("<option>").val(x).html(x)
+                aggregator.append $("<option>").val(x).html(aggrTrans[x])
 
             $("<td>").addClass('pvtVals')
               .appendTo(tr1)

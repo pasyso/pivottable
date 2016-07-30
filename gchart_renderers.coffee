@@ -14,17 +14,19 @@ callWithJQuery ($) ->
             localeStrings:
                 vs: "vs"
                 by: "by"
+                and: "and"
+                openAsImage: "As image"
             gchart: {}
 
         opts = $.extend true, defaults, opts
         opts.gchart.width ?= window.innerWidth / 1.4
-        opts.gchart.height ?= window.innerHeight / 1.4
+#        opts.gchart.height ?= window.innerHeight / 1.4
 
         rowKeys = pivotData.getRowKeys()
         rowKeys.push [] if rowKeys.length == 0
         colKeys = pivotData.getColKeys()
         colKeys.push [] if colKeys.length == 0
-        fullAggName = pivotData.aggregatorName 
+        fullAggName = $.pivotUtilities.locales[opts.lang].aggregatorTrans[pivotData.aggregatorName]
         if pivotData.valAttrs.length
             fullAggName += "(#{pivotData.valAttrs.join(", ")})"
         headers = (h.join("-") for h in rowKeys)
@@ -67,19 +69,34 @@ callWithJQuery ($) ->
                     else row.push null
                 dataArray.push row
 
+            maxCharsInLegend = 0
+            for rowKey in rowKeys
+                len = rowKey.join("-").length
+                maxCharsInLegend = len if maxCharsInLegend < len
+
             dataTable = google.visualization.arrayToDataTable(dataArray)
 
             title = vAxisTitle = fullAggName
             hAxisTitle = pivotData.colAttrs.join("-")
-            title += " #{opts.localeStrings.vs} #{hAxisTitle}" if hAxisTitle != ""
             groupByTitle = pivotData.rowAttrs.join("-")
-            title += " #{opts.localeStrings.by} #{groupByTitle}" if groupByTitle != ""
+            if hAxisTitle != "" || groupByTitle != ""
+                title += " #{opts.localeStrings.by}"
+                title += " #{hAxisTitle}" if hAxisTitle != ""
+                title += " #{opts.localeStrings.and}" if hAxisTitle != "" && groupByTitle != ""
+                title += " #{groupByTitle}" if groupByTitle != ""
 
+        commonTextStyle = fontSize : 13
+        
         options = 
             title: title
-            hAxis: {title: hAxisTitle, slantedText: numCharsInHAxis > 50}
-            vAxis: {title: vAxisTitle}
-            tooltip: { textStyle: { fontName: 'Arial', fontSize: 12 } }
+            hAxis: title: hAxisTitle,slantedText: numCharsInHAxis > 50,textStyle: commonTextStyle,titleTextStyle: commonTextStyle
+            vAxis: title: vAxisTitle,textStyle: commonTextStyle,titleTextStyle: commonTextStyle
+            height: 800
+            chartArea: {width: '80%', top: '60', height: 500}
+            tooltip: textStyle: commonTextStyle
+            titleTextStyle: fontSize: 16
+            annotations: textStyle: commonTextStyle
+            legend: textStyle: commonTextStyle
 
         if chartType == "ColumnChart"
             options.vAxis.minValue = 0
@@ -93,14 +110,40 @@ callWithJQuery ($) ->
         
         $.extend options, opts.gchart, extraOptions
 
-        result = $("<div>").css(width: "100%", height: "100%")
+        if chartType != "ScatterChart"
+            options.chartArea.width = colKeys.length*40
+            options.chartArea.width = 500 if options.chartArea.width < 500
+            options.width = (options.chartArea.width+200)
+            if maxCharsInLegend>4
+                options.width += maxCharsInLegend*6
+                options.chartArea.left = 100
+
+            if rowKeys.length > 22
+                dh =  (rowKeys.length - 22)*6
+                options.height += dh
+                options.chartArea.height += dh
+
+#        if options.width < opts.gchart.width
+#            options.width = opts.gchart.width
+#            options.chartArea = width: '80%', top: '60', height: '500'
+
+        result = $("<div>").css(width: "100%", height: "100%", position: 'relative')
+        chartHolder = $("<div></div>").css(width: "100%", height: "800px")
+        imageLink = $("<div><a class=\"btn btn-sm btn-default\"><i class=\"fa fa-picture-o fa-fw\"></i> #{opts.localeStrings.openAsImage}</a></div>").css(position: 'absolute', top:'10px', right:'10px')
+        $(result[0]).append(chartHolder,imageLink)
         wrapper = new google.visualization.ChartWrapper {dataTable, chartType, options}
-        wrapper.draw(result[0])    
-        result.bind "dblclick", -> 
-            editor = new google.visualization.ChartEditor()
-            google.visualization.events.addListener editor, 'ok', -> 
-                editor.getChartWrapper().draw(result[0])
-            editor.openDialog(wrapper)
+        wrapper.draw(chartHolder[0])
+#        imageUrl = wrapper.getChart().getImageURI()
+        imageLink.bind "click", ->
+            window.open(wrapper.getChart().getImageURI(), '_blank');
+
+        chartHolder.bind "dblclick", ->
+            if google.visualization.hasOwnProperty('ChartEditor') and google.visualization.ChartEditor == 'function'
+                editor = new google.visualization.ChartEditor()
+                google.visualization.events.addListener editor, 'ok', ->
+                    editor.getChartWrapper().draw(chartHolder[0])
+                editor.openDialog(wrapper)
+            else console.log('ChartEditor not loaded')
         return result
 
     $.pivotUtilities.gchart_renderers = 
@@ -109,3 +152,19 @@ callWithJQuery ($) ->
         "Stacked Bar Chart": makeGoogleChart("ColumnChart", isStacked: true)
         "Area Chart": makeGoogleChart("AreaChart", isStacked: true)
         "Scatter Chart": makeGoogleChart("ScatterChart")
+
+    rendererTrans =
+        "Line Chart": "Line Chart"
+        "Bar Chart": "Bar Chart"
+        "Stacked Bar Chart": "Stacked Bar Chart"
+        "Area Chart": "Area Chart"
+        "Scatter Chart": "Scatter Chart"
+    $.pivotUtilities.locales.en.rendererTrans = $.extend($.pivotUtilities.locales.en.rendererTrans,rendererTrans);
+    
+    rendererTrans =
+        "Line Chart": "Линейчатый график"
+        "Bar Chart": "Гистограмма"
+        "Stacked Bar Chart": "Гистограмма с накоплением"
+        "Area Chart": "Диаграммма с областями"
+        "Scatter Chart": "Точечная диаграмма"    
+    $.pivotUtilities.locales.ru.rendererTrans = $.extend($.pivotUtilities.locales.ru.rendererTrans,rendererTrans);

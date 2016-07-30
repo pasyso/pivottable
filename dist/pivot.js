@@ -369,8 +369,6 @@
     };
     locales = {
       en: {
-        aggregators: aggregators,
-        renderers: renderers,
         localeStrings: {
           renderError: "An error occurred rendering the PivotTable results.",
           computeError: "An error occurred computing the PivotTable results.",
@@ -381,7 +379,34 @@
           filterResults: "Filter results",
           totals: "Totals",
           vs: "vs",
-          by: "by"
+          by: "by",
+          and: "and"
+        },
+        rendererTrans: {
+          "Table": "Table",
+          "Table Barchart": "Table Barchart",
+          "Heatmap": "Heatmap",
+          "Row Heatmap": "Row Heatmap",
+          "Col Heatmap": "Col Heatmap"
+        },
+        aggregatorTrans: {
+          "Count": "Count",
+          "Count Unique Values": "Count Unique Values",
+          "List Unique Values": "List Unique Values",
+          "Sum": "Sum",
+          "Integer Sum": "Integer Sum",
+          "Average": "Average",
+          "Minimum": "Minimum",
+          "Maximum": "Maximum",
+          "Sum over Sum": "Sum over Sum",
+          "80% Upper Bound": "80% Upper Bound",
+          "80% Lower Bound": "80% Lower Bound",
+          "Sum as Fraction of Total": "Sum as Fraction of Total",
+          "Sum as Fraction of Rows": "Sum as Fraction of Rows",
+          "Sum as Fraction of Columns": "Sum as Fraction of Columns",
+          "Count as Fraction of Total": "Count as Fraction of Total",
+          "Count as Fraction of Rows": "Count as Fraction of Rows",
+          "Count as Fraction of Columns": "Count as Fraction of Columns"
         }
       }
     };
@@ -956,7 +981,7 @@
     Pivot Table UI: calls Pivot Table core above with options set by user
      */
     $.fn.pivotUI = function(input, inputOpts, overwrite, locale) {
-      var a, aggregator, attrLength, axisValues, c, colList, defaults, e, error, existingOpts, fn, i, initialRender, k, l, len1, len2, len3, len4, n, o, opts, pivotTable, q, ref, ref1, ref2, ref3, ref4, refresh, refreshDelayed, renderer, rendererControl, shownAttributes, tblCols, tr1, tr2, uiTable, unusedAttrsVerticalAutoCutoff, unusedAttrsVerticalAutoOverride, x;
+      var a, aggrTrans, aggregator, attrLength, axisValues, c, colList, defaults, e, error, existingOpts, fn, i, initialRender, k, l, len1, len2, len3, len4, n, o, opts, pivotTable, q, ref, ref1, ref2, ref3, ref4, refresh, refreshDelayed, renderer, rendererControl, rendererTrans, shownAttributes, tblCols, tr1, tr2, uiTable, unusedAttrsVerticalAutoCutoff, unusedAttrsVerticalAutoOverride, x;
       if (overwrite == null) {
         overwrite = false;
       }
@@ -967,9 +992,10 @@
         locale = "en";
       }
       defaults = {
+        lang: locale,
         derivedAttributes: {},
-        aggregators: locales[locale].aggregators,
-        renderers: locales[locale].renderers,
+        aggregators: aggregators,
+        renderers: renderers,
         hiddenAttributes: [],
         menuLimit: 200,
         cols: [],
@@ -980,7 +1006,8 @@
         unusedAttrsVertical: 85,
         autoSortUnusedAttrs: false,
         rendererOptions: {
-          localeStrings: locales[locale].localeStrings
+          localeStrings: locales[locale].localeStrings,
+          lang: locale
         },
         onRefresh: null,
         filter: function() {
@@ -1042,13 +1069,14 @@
           "class": "pvtUi"
         }).attr("cellpadding", 5);
         rendererControl = $("<td>");
+        rendererTrans = locales[locale].rendererTrans;
         renderer = $("<select>").addClass('pvtRenderer').appendTo(rendererControl).bind("change", function() {
           return refresh();
         });
         ref1 = opts.renderers;
         for (x in ref1) {
           if (!hasProp.call(ref1, x)) continue;
-          $("<option>").val(x).html(x).appendTo(renderer);
+          $("<option>").val(x).html(rendererTrans[x]).appendTo(renderer);
         }
         colList = $("<td>").addClass('pvtAxisContainer pvtUnused');
         shownAttributes = (function() {
@@ -1186,13 +1214,14 @@
           fn(c);
         }
         tr1 = $("<tr>").appendTo(uiTable);
+        aggrTrans = locales[locale].aggregatorTrans;
         aggregator = $("<select>").addClass('pvtAggregator').bind("change", function() {
           return refresh();
         });
         ref2 = opts.aggregators;
         for (x in ref2) {
           if (!hasProp.call(ref2, x)) continue;
-          aggregator.append($("<option>").val(x).html(x));
+          aggregator.append($("<option>").val(x).html(aggrTrans[x]));
         }
         $("<td>").addClass('pvtVals').appendTo(tr1).append(aggregator).append($("<br>"));
         $("<td>").addClass('pvtAxisContainer pvtHorizList pvtCols').appendTo(tr1);

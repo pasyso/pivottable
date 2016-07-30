@@ -14,7 +14,8 @@ callWithJQuery ($) ->
     frFmt =    nf(thousandsSep: " ", decimalSep: ",")
     frFmtInt = nf(digitsAfterDecimal: 0, thousandsSep: " ", decimalSep: ",")
     frFmtPct = nf(digitsAfterDecimal: 1, scaler: 100, suffix: "%", thousandsSep: " ", decimalSep: ",")
-
+#    rendererNames = ["Таблица","График столбцы","Теплова карта","Тепловая карта по строке","Тепловая карта по столбцу"]
+    
     $.pivotUtilities.locales.ru = 
         localeStrings:
             renderError: "Ошибка рендеринга страницы;.",
@@ -26,31 +27,30 @@ callWithJQuery ($) ->
             filterResults: "Значение фильтра",
             totals: "Всего",
             vs: "на",
-            by: "с"
-
-        aggregators: 
-            "Счет": tpl.count(frFmtInt),
-            "Счет уникальных": tpl.countUnique(frFmtInt),
-            "Список уникальных": tpl.listUnique(", "),
-            "Сумма": tpl.sum(frFmt),
-            "Сумма целых": tpl.sum(frFmtInt),
-            "Среднее": tpl.average(frFmt),
-            "Минимум": tpl.min(frFmt),
-            "Максимум": tpl.max(frFmt),
-            "Сумма по сумме": tpl.sumOverSum(frFmt),
-            "80% верхней границы": tpl.sumOverSumBound80(true, frFmt),
-            "80% нижней границы": tpl.sumOverSumBound80(false, frFmt),
-            "Доля по всему": tpl.fractionOf(tpl.sum(), "total", frFmtPct),
-            "Доля по строке": tpl.fractionOf(tpl.sum(), "row", frFmtPct),
-            "Доля по столбцу": tpl.fractionOf(tpl.sum(), "col", frFmtPct),
-            "Счет по всему": tpl.fractionOf(tpl.count(), "total", frFmtPct),
-            "Счет по строке": tpl.fractionOf(tpl.count(), "row", frFmtPct),
-            "Счет по столбцу": tpl.fractionOf(tpl.count(), "col", frFmtPct)
-
-        renderers:
-            "Таблица": $.pivotUtilities.renderers["Table"]
-            "График столбцы": $.pivotUtilities.renderers["Table Barchart"]
-            "Теплова карта": $.pivotUtilities.renderers["Heatmap"]
-            "Тепловая карта по строке": $.pivotUtilities.renderers["Row Heatmap"]
-            "Тепловая карта по столбцу": $.pivotUtilities.renderers["Col Heatmap"]
-
+            by: "по",
+            and: "и",
+            openAsImage: "Открыть как изображение"
+        rendererTrans:
+            "Table":          "Таблица"
+            "Table Barchart": "График столбцы"
+            "Heatmap":        "Теплова карта"
+            "Row Heatmap":    "Тепловая карта по строке"
+            "Col Heatmap":    "Тепловая карта по столбцу"
+        aggregatorTrans:
+            "Count":                "Количество"
+            "Count Unique Values":  "Количество уникальных"
+            "List Unique Values":   "Список уникальных"
+            "Sum":                  "Сумма"
+            "Integer Sum":          "Сумма целых"
+            "Average":              "Среднее"
+            "Minimum":              "Минимум"
+            "Maximum":              "Максимум"
+            "Sum over Sum":         "Сумма в Сумме"
+            "80% Upper Bound":      "80% верхней границы"
+            "80% Lower Bound":      "80% нижней границы"
+            "Sum as Fraction of Total":     "Доля от общей суммы"
+            "Sum as Fraction of Rows":      "Доля от суммы по строке"
+            "Sum as Fraction of Columns":   "Доля от суммы по столбцу"
+            "Count as Fraction of Total":   "Счет по всему"
+            "Count as Fraction of Rows":    "Счет по строке"
+            "Count as Fraction of Columns": "Счет по столбцу"

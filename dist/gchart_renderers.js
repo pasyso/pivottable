@@ -12,23 +12,22 @@
   };
 
   callWithJQuery(function($) {
-    var makeGoogleChart;
+    var makeGoogleChart, rendererTrans;
     makeGoogleChart = function(chartType, extraOptions) {
       return function(pivotData, opts) {
-        var agg, base, base1, colKey, colKeys, dataArray, dataTable, defaults, fullAggName, groupByTitle, h, hAxisTitle, headers, i, j, len, len1, numCharsInHAxis, options, ref, result, row, rowKey, rowKeys, title, tree2, vAxisTitle, val, wrapper, x, y;
+        var agg, base, chartHolder, colKey, colKeys, commonTextStyle, dataArray, dataTable, defaults, dh, fullAggName, groupByTitle, h, hAxisTitle, headers, i, imageLink, j, k, len, len1, len2, len3, maxCharsInLegend, numCharsInHAxis, options, ref, result, row, rowKey, rowKeys, title, tree2, vAxisTitle, val, wrapper, x, y;
         defaults = {
           localeStrings: {
             vs: "vs",
-            by: "by"
+            by: "by",
+            and: "and",
+            openAsImage: "As image"
           },
           gchart: {}
         };
         opts = $.extend(true, defaults, opts);
         if ((base = opts.gchart).width == null) {
           base.width = window.innerWidth / 1.4;
-        }
-        if ((base1 = opts.gchart).height == null) {
-          base1.height = window.innerHeight / 1.4;
         }
         rowKeys = pivotData.getRowKeys();
         if (rowKeys.length === 0) {
@@ -38,14 +37,14 @@
         if (colKeys.length === 0) {
           colKeys.push([]);
         }
-        fullAggName = pivotData.aggregatorName;
+        fullAggName = $.pivotUtilities.locales[opts.lang].aggregatorTrans[pivotData.aggregatorName];
         if (pivotData.valAttrs.length) {
           fullAggName += "(" + (pivotData.valAttrs.join(", ")) + ")";
         }
         headers = (function() {
-          var i, len, results;
+          var i, len1, results;
           results = [];
-          for (i = 0, len = rowKeys.length; i < len; i++) {
+          for (i = 0, len1 = rowKeys.length; i < len1; i++) {
             h = rowKeys[i];
             results.push(h.join("-"));
           }
@@ -76,11 +75,11 @@
           title = "";
         } else {
           dataArray = [headers];
-          for (i = 0, len = colKeys.length; i < len; i++) {
+          for (i = 0, len1 = colKeys.length; i < len1; i++) {
             colKey = colKeys[i];
             row = [colKey.join("-")];
             numCharsInHAxis += row[0].length;
-            for (j = 0, len1 = rowKeys.length; j < len1; j++) {
+            for (j = 0, len2 = rowKeys.length; j < len2; j++) {
               rowKey = rowKeys[j];
               agg = pivotData.getAggregator(rowKey, colKey);
               if (agg.value() != null) {
@@ -100,31 +99,64 @@
             }
             dataArray.push(row);
           }
+          maxCharsInLegend = 0;
+          for (k = 0, len3 = rowKeys.length; k < len3; k++) {
+            rowKey = rowKeys[k];
+            len = rowKey.join("-").length;
+            if (maxCharsInLegend < len) {
+              maxCharsInLegend = len;
+            }
+          }
           dataTable = google.visualization.arrayToDataTable(dataArray);
           title = vAxisTitle = fullAggName;
           hAxisTitle = pivotData.colAttrs.join("-");
-          if (hAxisTitle !== "") {
-            title += " " + opts.localeStrings.vs + " " + hAxisTitle;
-          }
           groupByTitle = pivotData.rowAttrs.join("-");
-          if (groupByTitle !== "") {
-            title += " " + opts.localeStrings.by + " " + groupByTitle;
+          if (hAxisTitle !== "" || groupByTitle !== "") {
+            title += " " + opts.localeStrings.by;
+            if (hAxisTitle !== "") {
+              title += " " + hAxisTitle;
+            }
+            if (hAxisTitle !== "" && groupByTitle !== "") {
+              title += " " + opts.localeStrings.and;
+            }
+            if (groupByTitle !== "") {
+              title += " " + groupByTitle;
+            }
           }
         }
+        commonTextStyle = {
+          fontSize: 13
+        };
         options = {
           title: title,
           hAxis: {
             title: hAxisTitle,
-            slantedText: numCharsInHAxis > 50
+            slantedText: numCharsInHAxis > 50,
+            textStyle: commonTextStyle,
+            titleTextStyle: commonTextStyle
           },
           vAxis: {
-            title: vAxisTitle
+            title: vAxisTitle,
+            textStyle: commonTextStyle,
+            titleTextStyle: commonTextStyle
+          },
+          height: 800,
+          chartArea: {
+            width: '80%',
+            top: '60',
+            height: 500
           },
           tooltip: {
-            textStyle: {
-              fontName: 'Arial',
-              fontSize: 12
-            }
+            textStyle: commonTextStyle
+          },
+          titleTextStyle: {
+            fontSize: 16
+          },
+          annotations: {
+            textStyle: commonTextStyle
+          },
+          legend: {
+            textStyle: commonTextStyle
           }
         };
         if (chartType === "ColumnChart") {
@@ -144,28 +176,62 @@
           };
         }
         $.extend(options, opts.gchart, extraOptions);
+        if (chartType !== "ScatterChart") {
+          options.chartArea.width = colKeys.length * 40;
+          if (options.chartArea.width < 500) {
+            options.chartArea.width = 500;
+          }
+          options.width = options.chartArea.width + 200;
+          if (maxCharsInLegend > 4) {
+            options.width += maxCharsInLegend * 6;
+            options.chartArea.left = 100;
+          }
+          if (rowKeys.length > 22) {
+            dh = (rowKeys.length - 22) * 6;
+            options.height += dh;
+            options.chartArea.height += dh;
+          }
+        }
         result = $("<div>").css({
           width: "100%",
-          height: "100%"
+          height: "100%",
+          position: 'relative'
         });
+        chartHolder = $("<div></div>").css({
+          width: "100%",
+          height: "800px"
+        });
+        imageLink = $("<div><a class=\"btn btn-sm btn-default\"><i class=\"fa fa-picture-o fa-fw\"></i> " + opts.localeStrings.openAsImage + "</a></div>").css({
+          position: 'absolute',
+          top: '10px',
+          right: '10px'
+        });
+        $(result[0]).append(chartHolder, imageLink);
         wrapper = new google.visualization.ChartWrapper({
           dataTable: dataTable,
           chartType: chartType,
           options: options
         });
-        wrapper.draw(result[0]);
-        result.bind("dblclick", function() {
+        wrapper.draw(chartHolder[0]);
+        imageLink.bind("click", function() {
+          return window.open(wrapper.getChart().getImageURI(), '_blank');
+        });
+        chartHolder.bind("dblclick", function() {
           var editor;
-          editor = new google.visualization.ChartEditor();
-          google.visualization.events.addListener(editor, 'ok', function() {
-            return editor.getChartWrapper().draw(result[0]);
-          });
-          return editor.openDialog(wrapper);
+          if (google.visualization.hasOwnProperty('ChartEditor') && google.visualization.ChartEditor === 'function') {
+            editor = new google.visualization.ChartEditor();
+            google.visualization.events.addListener(editor, 'ok', function() {
+              return editor.getChartWrapper().draw(chartHolder[0]);
+            });
+            return editor.openDialog(wrapper);
+          } else {
+            return console.log('ChartEditor not loaded');
+          }
         });
         return result;
       };
     };
-    return $.pivotUtilities.gchart_renderers = {
+    $.pivotUtilities.gchart_renderers = {
       "Line Chart": makeGoogleChart("LineChart"),
       "Bar Chart": makeGoogleChart("ColumnChart"),
       "Stacked Bar Chart": makeGoogleChart("ColumnChart", {
@@ -176,6 +242,22 @@
       }),
       "Scatter Chart": makeGoogleChart("ScatterChart")
     };
+    rendererTrans = {
+      "Line Chart": "Line Chart",
+      "Bar Chart": "Bar Chart",
+      "Stacked Bar Chart": "Stacked Bar Chart",
+      "Area Chart": "Area Chart",
+      "Scatter Chart": "Scatter Chart"
+    };
+    $.pivotUtilities.locales.en.rendererTrans = $.extend($.pivotUtilities.locales.en.rendererTrans, rendererTrans);
+    rendererTrans = {
+      "Line Chart": "Линейчатый график",
+      "Bar Chart": "Гистограмма",
+      "Stacked Bar Chart": "Гистограмма с накоплением",
+      "Area Chart": "Диаграммма с областями",
+      "Scatter Chart": "Точечная диаграмма"
+    };
+    return $.pivotUtilities.locales.ru.rendererTrans = $.extend($.pivotUtilities.locales.ru.rendererTrans, rendererTrans);
   });
 
 }).call(this);
