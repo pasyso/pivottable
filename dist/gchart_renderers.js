@@ -46,7 +46,7 @@
           results = [];
           for (i = 0, len1 = rowKeys.length; i < len1; i++) {
             h = rowKeys[i];
-            results.push(h.join("-"));
+            results.push($.pivotUtilities.getValueTranslation(h, opts.localeStrings).join("-"));
           }
           return results;
         })();
@@ -63,21 +63,21 @@
             }
           }
           dataTable = new google.visualization.DataTable();
-          dataTable.addColumn('number', pivotData.colAttrs.join("-"));
-          dataTable.addColumn('number', pivotData.rowAttrs.join("-"));
+          hAxisTitle = $.pivotUtilities.getTranslation(pivotData.colAttrs, opts.dataTrans).join("-");
+          vAxisTitle = $.pivotUtilities.getTranslation(pivotData.rowAttrs, opts.dataTrans).join("-");
+          dataTable.addColumn('number', hAxisTitle);
+          dataTable.addColumn('number', vAxisTitle);
           dataTable.addColumn({
             type: "string",
             role: "tooltip"
           });
           dataTable.addRows(dataArray);
-          hAxisTitle = pivotData.colAttrs.join("-");
-          vAxisTitle = pivotData.rowAttrs.join("-");
           title = "";
         } else {
           dataArray = [headers];
           for (i = 0, len1 = colKeys.length; i < len1; i++) {
             colKey = colKeys[i];
-            row = [colKey.join("-")];
+            row = [$.pivotUtilities.getValueTranslation(colKey, opts.localeStrings).join("-")];
             numCharsInHAxis += row[0].length;
             for (j = 0, len2 = rowKeys.length; j < len2; j++) {
               rowKey = rowKeys[j];
@@ -109,8 +109,8 @@
           }
           dataTable = google.visualization.arrayToDataTable(dataArray);
           title = vAxisTitle = fullAggName;
-          hAxisTitle = pivotData.colAttrs.join("-");
-          groupByTitle = pivotData.rowAttrs.join("-");
+          hAxisTitle = $.pivotUtilities.getTranslation(pivotData.colAttrs, opts.dataTrans).join("-");
+          groupByTitle = $.pivotUtilities.getTranslation(pivotData.rowAttrs, opts.dataTrans).join("-");
           if (hAxisTitle !== "" || groupByTitle !== "") {
             title += " " + opts.localeStrings.by;
             if (hAxisTitle !== "") {

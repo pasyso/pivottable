@@ -29,7 +29,7 @@ callWithJQuery ($) ->
         fullAggName = $.pivotUtilities.locales[opts.lang].aggregatorTrans[pivotData.aggregatorName]
         if pivotData.valAttrs.length
             fullAggName += "(#{pivotData.valAttrs.join(", ")})"
-        headers = (h.join("-") for h in rowKeys)
+        headers = ($.pivotUtilities.getValueTranslation(h, opts.localeStrings).join("-") for h in rowKeys)
         headers.unshift ""
 
         numCharsInHAxis = 0
@@ -43,17 +43,17 @@ callWithJQuery ($) ->
                         fullAggName+": \n"+agg.format(agg.value())
                         ]
             dataTable = new google.visualization.DataTable()
-            dataTable.addColumn 'number', pivotData.colAttrs.join("-")
-            dataTable.addColumn 'number', pivotData.rowAttrs.join("-") 
+            hAxisTitle = $.pivotUtilities.getTranslation(pivotData.colAttrs,opts.dataTrans).join("-")
+            vAxisTitle = $.pivotUtilities.getTranslation(pivotData.rowAttrs,opts.dataTrans).join("-")
+            dataTable.addColumn 'number', hAxisTitle
+            dataTable.addColumn 'number', vAxisTitle
             dataTable.addColumn type: "string", role: "tooltip"
             dataTable.addRows dataArray
-            hAxisTitle = pivotData.colAttrs.join("-")
-            vAxisTitle = pivotData.rowAttrs.join("-")
             title = ""
         else
             dataArray = [headers]
             for colKey in colKeys
-                row = [colKey.join("-")]
+                row = [ $.pivotUtilities.getValueTranslation(colKey, opts.localeStrings).join("-")]
                 numCharsInHAxis += row[0].length
                 for rowKey in rowKeys
                     agg = pivotData.getAggregator(rowKey, colKey)
@@ -77,8 +77,8 @@ callWithJQuery ($) ->
             dataTable = google.visualization.arrayToDataTable(dataArray)
 
             title = vAxisTitle = fullAggName
-            hAxisTitle = pivotData.colAttrs.join("-")
-            groupByTitle = pivotData.rowAttrs.join("-")
+            hAxisTitle = $.pivotUtilities.getTranslation(pivotData.colAttrs,opts.dataTrans).join("-")
+            groupByTitle = $.pivotUtilities.getTranslation(pivotData.rowAttrs,opts.dataTrans).join("-")
             if hAxisTitle != "" || groupByTitle != ""
                 title += " #{opts.localeStrings.by}"
                 title += " #{hAxisTitle}" if hAxisTitle != ""

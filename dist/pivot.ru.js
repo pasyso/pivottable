@@ -33,8 +33,8 @@
     });
     return $.pivotUtilities.locales.ru = {
       localeStrings: {
-        renderError: "Ошибка рендеринга страницы;.",
-        computeError: "Ошибка табличных расчетов;.",
+        renderError: "Ошибка рендеринга страницы.",
+        computeError: "Ошибка табличных расчетов.",
         uiRenderError: "Ошибка во время прорисовки и динамического расчета таблицы.",
         selectAll: "Выбрать все",
         selectNone: "Ничего не выбирать",
@@ -44,7 +44,10 @@
         vs: "на",
         by: "по",
         and: "и",
-        openAsImage: "Открыть как изображение"
+        openAsImage: "Открыть как изображение",
+        b_true: "ИСТИНА",
+        b_false: "ЛОЖЬ",
+        no_data: "Нет данных"
       },
       rendererTrans: {
         "Table": "Таблица",

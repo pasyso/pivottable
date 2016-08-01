@@ -20,7 +20,7 @@
     /*
     Utilities
      */
-    var PivotData, addSeparators, aggregatorTemplates, aggregators, dayNamesEn, derivers, getSort, locales, mthNamesEn, naturalSort, numberFormat, pivotTableRenderer, renderers, sortAs, usFmt, usFmtInt, usFmtPct, zeroPad;
+    var PivotData, _getValueTranslation, addSeparators, aggregatorTemplates, aggregators, dayNamesEn, derivers, getSort, getTranslation, getValueTranslation, locales, mthNamesEn, naturalSort, numberFormat, pivotTableRenderer, renderers, sortAs, usFmt, usFmtInt, usFmtPct, zeroPad;
     addSeparators = function(nStr, thousandsSep, decimalSep) {
       var rgx, x, x1, x2;
       nStr += '';
@@ -380,7 +380,10 @@
           totals: "Totals",
           vs: "vs",
           by: "by",
-          and: "and"
+          and: "and",
+          b_true: "TRUE",
+          b_false: "FALSE",
+          no_data: "No data"
         },
         rendererTrans: {
           "Table": "Table",
@@ -531,6 +534,48 @@
         return sort;
       } else {
         return naturalSort;
+      }
+    };
+    getTranslation = function(data, dataTrans) {
+      if (dataTrans == null) {
+        return data;
+      } else {
+        if ($.isArray(data)) {
+          return data.map(function(key) {
+            return dataTrans[key];
+          });
+        } else {
+          return dataTrans[data];
+        }
+      }
+    };
+    _getValueTranslation = function(k, dataTrans) {
+      var k_name;
+      if (dataTrans == null) {
+        return k;
+      }
+      if (k === true || k === 'true') {
+        k_name = dataTrans.b_true;
+      } else if (k === false || k === 'false') {
+        k_name = dataTrans.b_false;
+      } else if (k === '') {
+        k_name = dataTrans.no_data;
+      } else {
+        k_name = k;
+      }
+      return k_name;
+    };
+    getValueTranslation = function(data, dataTrans) {
+      if (dataTrans == null) {
+        return data;
+      } else {
+        if ($.isArray(data)) {
+          return data.map(function(key) {
+            return _getValueTranslation(key, dataTrans);
+          });
+        } else {
+          return _getValueTranslation(data, dataTrans);
+        }
       }
     };
 
@@ -755,7 +800,9 @@
       naturalSort: naturalSort,
       numberFormat: numberFormat,
       sortAs: sortAs,
-      PivotData: PivotData
+      PivotData: PivotData,
+      getTranslation: getTranslation,
+      getValueTranslation: getValueTranslation
     };
 
     /*
@@ -815,7 +862,7 @@
         }
         th = document.createElement("th");
         th.className = "pvtAxisLabel";
-        th.textContent = c;
+        th.textContent = opts.dataTrans != null ? opts.dataTrans[c] : c;
         tr.appendChild(th);
         for (i in colKeys) {
           if (!hasProp.call(colKeys, i)) continue;
@@ -824,7 +871,7 @@
           if (x !== -1) {
             th = document.createElement("th");
             th.className = "pvtColLabel";
-            th.textContent = colKey[j];
+            th.textContent = $.pivotUtilities.getValueTranslation(colKey[j], opts.localeStrings);
             th.setAttribute("colspan", x);
             if (parseInt(j) === colAttrs.length - 1 && rowAttrs.length !== 0) {
               th.setAttribute("rowspan", 2);
@@ -848,7 +895,7 @@
           r = rowAttrs[i];
           th = document.createElement("th");
           th.className = "pvtAxisLabel";
-          th.textContent = r;
+          th.textContent = opts.dataTrans != null ? opts.dataTrans[r] : r;
           tr.appendChild(th);
         }
         th = document.createElement("th");
@@ -870,7 +917,7 @@
           if (x !== -1) {
             th = document.createElement("th");
             th.className = "pvtRowLabel";
-            th.textContent = txt;
+            th.textContent = $.pivotUtilities.getValueTranslation(txt, opts.localeStrings);
             th.setAttribute("rowspan", x);
             if (parseInt(j) === rowAttrs.length - 1 && colAttrs.length !== 0) {
               th.setAttribute("colspan", 2);
@@ -1023,6 +1070,10 @@
         opts = existingOpts;
       }
       try {
+        if (opts.dataTrans != null) {
+          opts.rendererOptions.dataTrans = opts.dataTrans;
+          delete opts.dataTrans;
+        }
         input = PivotData.convertToArray(input);
         tblCols = (function() {
           var ref, results;
@@ -1110,7 +1161,7 @@
           colList.addClass('pvtHorizList');
         }
         fn = function(c) {
-          var attrElem, btns, checkContainer, filterItem, filterItemExcluded, hasExcludedItem, keys, len3, o, ref2, showFilterList, triangleLink, updateFilter, v, valueList;
+          var attrElem, btns, c_name, checkContainer, filterItem, filterItemExcluded, hasExcludedItem, keys, len3, o, ref2, showFilterList, triangleLink, updateFilter, v, valueList;
           keys = (function() {
             var results;
             results = [];
@@ -1119,9 +1170,10 @@
             }
             return results;
           })();
+          c_name = opts.rendererOptions.dataTrans != null ? opts.rendererOptions.dataTrans[c] : c;
           hasExcludedItem = false;
           valueList = $("<div>").addClass('pvtFilterBox').hide();
-          valueList.append($("<h4>").text(c + " (" + keys.length + ")"));
+          valueList.append($("<h4>").text(c_name + " (" + keys.length + ")"));
           if (keys.length > opts.menuLimit) {
             valueList.append($("<p>").html(opts.localeStrings.tooMany));
           } else {
@@ -1168,7 +1220,7 @@
               }
               hasExcludedItem || (hasExcludedItem = filterItemExcluded);
               $("<input>").attr("type", "checkbox").addClass('pvtFilter').attr("checked", !filterItemExcluded).data("filter", [c, k]).appendTo(filterItem);
-              filterItem.append($("<span>").text(k));
+              filterItem.append($("<span>").text($.pivotUtilities.getValueTranslation(k, opts.localeStrings)));
               filterItem.append($("<span>").text(" (" + v + ")"));
               checkContainer.append($("<p>").append(filterItem));
             }
@@ -1201,7 +1253,7 @@
             return valueList.find('.pvtCheckContainer p').show();
           };
           triangleLink = $("<span>").addClass('pvtTriangle').html(" &#x25BE;").bind("click", showFilterList);
-          attrElem = $("<li>").addClass("axis_" + i).append($("<span>").addClass('pvtAttr').text(c).data("attrName", c).append(triangleLink));
+          attrElem = $("<li>").addClass("axis_" + i).append($("<span>").addClass('pvtAttr').text(c_name).data("attrName", c).append(triangleLink));
           if (hasExcludedItem) {
             attrElem.addClass('pvtFilteredAttribute');
           }
@@ -1254,7 +1306,7 @@
         initialRender = true;
         refreshDelayed = (function(_this) {
           return function() {
-            var attr, exclusions, inclusions, len5, newDropdown, numInputsToProcess, pivotUIOptions, pvtVals, ref5, ref6, s, subopts, t, unusedAttrsContainer, vals;
+            var attr, attr_name, exclusions, inclusions, len5, newDropdown, numInputsToProcess, pivotUIOptions, pvtVals, ref5, ref6, s, subopts, t, unusedAttrsContainer, vals;
             subopts = {
               derivedAttributes: opts.derivedAttributes,
               localeStrings: opts.localeStrings,
@@ -1289,7 +1341,8 @@
                 });
                 for (t = 0, len5 = shownAttributes.length; t < len5; t++) {
                   attr = shownAttributes[t];
-                  newDropdown.append($("<option>").val(attr).text(attr));
+                  attr_name = opts.rendererOptions.dataTrans != null ? opts.rendererOptions.dataTrans[attr] : attr;
+                  newDropdown.append($("<option>").val(attr).text(attr_name));
                 }
                 pvtVals.append(newDropdown);
               }

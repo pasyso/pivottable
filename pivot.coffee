@@ -172,6 +172,9 @@ callWithJQuery ($) ->
                 vs: "vs" #for gchart renderer
                 by: "by" #for gchart renderer
                 and: "and" #for gchart renderer
+                b_true: "TRUE"
+                b_false: "FALSE"
+                no_data: "No data"
             rendererTrans:
                 "Table":          "Table"
                 "Table Barchart": "Table Barchart"
@@ -267,6 +270,30 @@ callWithJQuery ($) ->
         else
             return naturalSort
 
+    getTranslation = (data, dataTrans) ->
+        if !dataTrans?
+            return data
+        else
+            return if $.isArray(data) then data.map (key)-> dataTrans[key] else dataTrans[data]
+
+    _getValueTranslation = (k, dataTrans) ->
+        return k if !dataTrans?
+        if k==true || k=='true'
+            k_name = dataTrans.b_true
+        else if k==false || k=='false'
+            k_name = dataTrans.b_false
+        else if k==''
+            k_name = dataTrans.no_data
+        else
+            k_name = k
+        return k_name
+                
+    getValueTranslation = (data, dataTrans) ->
+        if !dataTrans?
+            return data
+        else
+            return if $.isArray(data) then data.map (key)-> _getValueTranslation(key, dataTrans) else _getValueTranslation(data, dataTrans)
+                                
     ###
     Data Model class
     ###
@@ -290,7 +317,7 @@ callWithJQuery ($) ->
             # iterate through input, accumulating data for cells
             PivotData.forEachRecord input, opts.derivedAttributes, (record) =>
                 @processRecord(record) if opts.filter(record)
-
+                
         #can handle arrays or jQuery selections of tables
         @forEachRecord = (input, derivedAttributes, f) ->
             if $.isEmptyObject derivedAttributes
@@ -393,7 +420,7 @@ callWithJQuery ($) ->
 
     #expose these to the outside world
     $.pivotUtilities = {aggregatorTemplates, aggregators, renderers, derivers, locales,
-        naturalSort, numberFormat, sortAs, PivotData}
+        naturalSort, numberFormat, sortAs, PivotData, getTranslation, getValueTranslation}
 
     ###
     Default Renderer for hierarchical table layout
@@ -444,14 +471,15 @@ callWithJQuery ($) ->
                 tr.appendChild th
             th = document.createElement("th")
             th.className = "pvtAxisLabel"
-            th.textContent = c
+            #th.textContent = c
+            th.textContent = if opts.dataTrans? then opts.dataTrans[c] else c
             tr.appendChild th
             for own i, colKey of colKeys
                 x = spanSize(colKeys, parseInt(i), parseInt(j))
                 if x != -1
                     th = document.createElement("th")
                     th.className = "pvtColLabel"
-                    th.textContent = colKey[j]
+                    th.textContent = $.pivotUtilities.getValueTranslation(colKey[j], opts.localeStrings)
                     th.setAttribute("colspan", x)
                     if parseInt(j) == colAttrs.length-1 and rowAttrs.length != 0
                         th.setAttribute("rowspan", 2)
@@ -470,7 +498,8 @@ callWithJQuery ($) ->
             for own i, r of rowAttrs
                 th = document.createElement("th")
                 th.className = "pvtAxisLabel"
-                th.textContent = r
+                #th.textContent = r
+                th.textContent = if opts.dataTrans? then opts.dataTrans[r] else r
                 tr.appendChild th 
             th = document.createElement("th")
             if colAttrs.length ==0
@@ -487,7 +516,7 @@ callWithJQuery ($) ->
                 if x != -1
                     th = document.createElement("th")
                     th.className = "pvtRowLabel"
-                    th.textContent = txt
+                    th.textContent = $.pivotUtilities.getValueTranslation(txt, opts.localeStrings)
                     th.setAttribute("rowspan", x)
                     if parseInt(j) == rowAttrs.length-1 and colAttrs.length !=0
                         th.setAttribute("colspan",2)
@@ -561,7 +590,6 @@ callWithJQuery ($) ->
             localeStrings: locales.en.localeStrings
 
         opts = $.extend defaults, opts
-
         result = null
         try
             pivotData = new PivotData(input, opts)
@@ -611,8 +639,12 @@ callWithJQuery ($) ->
             opts = $.extend defaults, inputOpts
         else
             opts = existingOpts
-
         try
+            if opts.dataTrans?
+                opts.rendererOptions.dataTrans = opts.dataTrans
+                delete opts.dataTrans
+
+#            console.log('pivotUI',opts)
             #cache the input in some useful form
             input = PivotData.convertToArray(input)
             tblCols = (k for own k of input[0])
@@ -665,10 +697,12 @@ callWithJQuery ($) ->
             for own i, c of shownAttributes
                 do (c) ->
                     keys = (k for k of axisValues[c])
+                    #if own dataTrans of otps
+                    c_name = if opts.rendererOptions.dataTrans? then opts.rendererOptions.dataTrans[c] else c
                     hasExcludedItem = false
                     valueList = $("<div>").addClass('pvtFilterBox').hide()
 
-                    valueList.append $("<h4>").text("#{c} (#{keys.length})")
+                    valueList.append $("<h4>").text("#{c_name} (#{keys.length})")
                     if keys.length > opts.menuLimit
                         valueList.append $("<p>").html(opts.localeStrings.tooMany)
                     else
@@ -702,7 +736,8 @@ callWithJQuery ($) ->
                                 .attr("type", "checkbox").addClass('pvtFilter')
                                 .attr("checked", !filterItemExcluded).data("filter", [c,k])
                                 .appendTo filterItem
-                             filterItem.append $("<span>").text k
+
+                             filterItem.append $("<span>").text $.pivotUtilities.getValueTranslation(k,opts.localeStrings)
                              filterItem.append $("<span>").text " ("+v+")"
                              checkContainer.append $("<p>").append(filterItem)
 
@@ -731,7 +766,7 @@ callWithJQuery ($) ->
                         .bind "click", showFilterList
 
                     attrElem = $("<li>").addClass("axis_#{i}")
-                        .append $("<span>").addClass('pvtAttr').text(c).data("attrName", c).append(triangleLink)
+                        .append $("<span>").addClass('pvtAttr').text(c_name).data("attrName", c).append(triangleLink)
                     attrElem.addClass('pvtFilteredAttribute') if hasExcludedItem
                     colList.append(attrElem).append(valueList)
 
@@ -816,7 +851,8 @@ callWithJQuery ($) ->
                             .append($("<option>"))
                             .bind "change", -> refresh()
                         for attr in shownAttributes
-                            newDropdown.append($("<option>").val(attr).text(attr))
+                            attr_name = if opts.rendererOptions.dataTrans? then opts.rendererOptions.dataTrans[attr] else attr
+                            newDropdown.append($("<option>").val(attr).text(attr_name))
                         pvtVals.append(newDropdown)
 
                 if initialRender
