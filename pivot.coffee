@@ -274,7 +274,9 @@ callWithJQuery ($) ->
         if !dataTrans?
             return data
         else
-            return if $.isArray(data) then data.map (key)-> dataTrans[key] else dataTrans[data]
+            return if $.isArray(data)
+                data.map (key)-> if dataTrans[key] then dataTrans[key] else key
+            else if dataTrans[data] then dataTrans[data] else data
 
     _getValueTranslation = (k, dataTrans) ->
         return k if !dataTrans?
@@ -472,7 +474,7 @@ callWithJQuery ($) ->
             th = document.createElement("th")
             th.className = "pvtAxisLabel"
             #th.textContent = c
-            th.textContent = if opts.dataTrans? then opts.dataTrans[c] else c
+            th.textContent = $.pivotUtilities.getTranslation(c, opts.dataTrans)
             tr.appendChild th
             for own i, colKey of colKeys
                 x = spanSize(colKeys, parseInt(i), parseInt(j))
@@ -499,7 +501,7 @@ callWithJQuery ($) ->
                 th = document.createElement("th")
                 th.className = "pvtAxisLabel"
                 #th.textContent = r
-                th.textContent = if opts.dataTrans? then opts.dataTrans[r] else r
+                th.textContent = $.pivotUtilities.getTranslation(r, opts.dataTrans)
                 tr.appendChild th 
             th = document.createElement("th")
             if colAttrs.length ==0
@@ -698,7 +700,7 @@ callWithJQuery ($) ->
                 do (c) ->
                     keys = (k for k of axisValues[c])
                     #if own dataTrans of otps
-                    c_name = if opts.rendererOptions.dataTrans? then opts.rendererOptions.dataTrans[c] else c
+                    c_name = $.pivotUtilities.getTranslation(c, opts.rendererOptions.dataTrans)
                     hasExcludedItem = false
                     valueList = $("<div>").addClass('pvtFilterBox').hide()
 
@@ -851,7 +853,7 @@ callWithJQuery ($) ->
                             .append($("<option>"))
                             .bind "change", -> refresh()
                         for attr in shownAttributes
-                            attr_name = if opts.rendererOptions.dataTrans? then opts.rendererOptions.dataTrans[attr] else attr
+                            attr_name = $.pivotUtilities.getTranslation(attr, opts.rendererOptions.dataTrans)
                             newDropdown.append($("<option>").val(attr).text(attr_name))
                         pvtVals.append(newDropdown)
 

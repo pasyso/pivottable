@@ -542,10 +542,16 @@
       } else {
         if ($.isArray(data)) {
           return data.map(function(key) {
-            return dataTrans[key];
+            if (dataTrans[key]) {
+              return dataTrans[key];
+            } else {
+              return key;
+            }
           });
-        } else {
+        } else if (dataTrans[data]) {
           return dataTrans[data];
+        } else {
+          return data;
         }
       }
     };
@@ -862,7 +868,7 @@
         }
         th = document.createElement("th");
         th.className = "pvtAxisLabel";
-        th.textContent = opts.dataTrans != null ? opts.dataTrans[c] : c;
+        th.textContent = $.pivotUtilities.getTranslation(c, opts.dataTrans);
         tr.appendChild(th);
         for (i in colKeys) {
           if (!hasProp.call(colKeys, i)) continue;
@@ -895,7 +901,7 @@
           r = rowAttrs[i];
           th = document.createElement("th");
           th.className = "pvtAxisLabel";
-          th.textContent = opts.dataTrans != null ? opts.dataTrans[r] : r;
+          th.textContent = $.pivotUtilities.getTranslation(r, opts.dataTrans);
           tr.appendChild(th);
         }
         th = document.createElement("th");
@@ -981,7 +987,7 @@
     Pivot Table core: create PivotData object and call Renderer on it
      */
     $.fn.pivot = function(input, opts) {
-      var defaults, e, error, error1, pivotData, result, x;
+      var defaults, e, pivotData, result, x;
       defaults = {
         cols: [],
         rows: [],
@@ -1010,8 +1016,8 @@
           }
           result = $("<span>").html(opts.localeStrings.renderError);
         }
-      } catch (error1) {
-        e = error1;
+      } catch (error) {
+        e = error;
         if (typeof console !== "undefined" && console !== null) {
           console.error(e.stack);
         }
@@ -1028,7 +1034,7 @@
     Pivot Table UI: calls Pivot Table core above with options set by user
      */
     $.fn.pivotUI = function(input, inputOpts, overwrite, locale) {
-      var a, aggrTrans, aggregator, attrLength, axisValues, c, colList, defaults, e, error, existingOpts, fn, i, initialRender, k, l, len1, len2, len3, len4, n, o, opts, pivotTable, q, ref, ref1, ref2, ref3, ref4, refresh, refreshDelayed, renderer, rendererControl, rendererTrans, shownAttributes, tblCols, tr1, tr2, uiTable, unusedAttrsVerticalAutoCutoff, unusedAttrsVerticalAutoOverride, x;
+      var a, aggrTrans, aggregator, attrLength, axisValues, c, colList, defaults, e, existingOpts, fn, i, initialRender, k, l, len1, len2, len3, len4, n, o, opts, pivotTable, q, ref, ref1, ref2, ref3, ref4, refresh, refreshDelayed, renderer, rendererControl, rendererTrans, shownAttributes, tblCols, tr1, tr2, uiTable, unusedAttrsVerticalAutoCutoff, unusedAttrsVerticalAutoOverride, x;
       if (overwrite == null) {
         overwrite = false;
       }
@@ -1170,7 +1176,7 @@
             }
             return results;
           })();
-          c_name = opts.rendererOptions.dataTrans != null ? opts.rendererOptions.dataTrans[c] : c;
+          c_name = $.pivotUtilities.getTranslation(c, opts.rendererOptions.dataTrans);
           hasExcludedItem = false;
           valueList = $("<div>").addClass('pvtFilterBox').hide();
           valueList.append($("<h4>").text(c_name + " (" + keys.length + ")"));
@@ -1341,7 +1347,7 @@
                 });
                 for (t = 0, len5 = shownAttributes.length; t < len5; t++) {
                   attr = shownAttributes[t];
-                  attr_name = opts.rendererOptions.dataTrans != null ? opts.rendererOptions.dataTrans[attr] : attr;
+                  attr_name = $.pivotUtilities.getTranslation(attr, opts.rendererOptions.dataTrans);
                   newDropdown.append($("<option>").val(attr).text(attr_name));
                 }
                 pvtVals.append(newDropdown);
