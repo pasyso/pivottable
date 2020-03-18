@@ -1,5 +1,5 @@
 (function() {
-  var callWithJQuery;
+  var callWithJQuery, openImageUrl;
 
   callWithJQuery = function(pivotModule) {
     if (typeof exports === "object" && typeof module === "object") {
@@ -9,6 +9,15 @@
     } else {
       return pivotModule(jQuery);
     }
+  };
+
+  openImageUrl = function(url) {
+    var iframe, x;
+    iframe = "<iframe src='" + url + "'  style=\"border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;\" allowfullscreen></iframe>";
+    x = window.open();
+    x.document.open();
+    x.document.write(iframe);
+    return x.document.close();
   };
 
   callWithJQuery(function($) {
@@ -201,7 +210,7 @@
           width: "100%",
           height: "800px"
         });
-        imageLink = $("<div><a class=\"btn btn-sm btn-default\"><i class=\"fa fa-picture-o fa-fw\"></i> " + opts.localeStrings.openAsImage + "</a></div>").css({
+        imageLink = $("<div><a class=\"btn btn-sm btn-default\"><i class=\"far fa-image fa-fw\"></i> " + opts.localeStrings.openAsImage + "</a></div>").css({
           position: 'absolute',
           top: '10px',
           right: '10px'
@@ -214,7 +223,7 @@
         });
         wrapper.draw(chartHolder[0]);
         imageLink.bind("click", function() {
-          return window.open(wrapper.getChart().getImageURI(), '_blank');
+          return openImageUrl(wrapper.getChart().getImageURI());
         });
         chartHolder.bind("dblclick", function() {
           var editor;

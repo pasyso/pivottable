@@ -6,7 +6,14 @@ callWithJQuery = (pivotModule) ->
     # Plain browser env
     else
         pivotModule jQuery
-        
+
+openImageUrl = (url) ->
+    iframe = "<iframe src='" + url + "'  style=\"border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;\" allowfullscreen></iframe>"
+    x = window.open()
+    x.document.open()
+    x.document.write(iframe)
+    x.document.close()
+
 callWithJQuery ($) ->
 
     makeGoogleChart = (chartType, extraOptions) -> (pivotData, opts) ->
@@ -129,13 +136,13 @@ callWithJQuery ($) ->
 
         result = $("<div>").css(width: "100%", height: "100%", position: 'relative')
         chartHolder = $("<div></div>").css(width: "100%", height: "800px")
-        imageLink = $("<div><a class=\"btn btn-sm btn-default\"><i class=\"fa fa-picture-o fa-fw\"></i> #{opts.localeStrings.openAsImage}</a></div>").css(position: 'absolute', top:'10px', right:'10px')
+        imageLink = $("<div><a class=\"btn btn-sm btn-default\"><i class=\"far fa-image fa-fw\"></i> #{opts.localeStrings.openAsImage}</a></div>").css(position: 'absolute', top:'10px', right:'10px')
         $(result[0]).append(chartHolder,imageLink)
         wrapper = new google.visualization.ChartWrapper {dataTable, chartType, options}
         wrapper.draw(chartHolder[0])
 #        imageUrl = wrapper.getChart().getImageURI()
         imageLink.bind "click", ->
-            window.open(wrapper.getChart().getImageURI(), '_blank');
+            openImageUrl(wrapper.getChart().getImageURI())
 
         chartHolder.bind "dblclick", ->
             if google.visualization.hasOwnProperty('ChartEditor') and google.visualization.ChartEditor == 'function'
