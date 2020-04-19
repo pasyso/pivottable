@@ -66,6 +66,11 @@ table.pvtTable tr td {
     color: grey;
 }
 
+.pvtFilteredAttribute .pvtTriangle {
+    color: blue;
+    font-style: normal;
+}
+
 .pvtHorizList li { display: inline; }
 .pvtVertList { vertical-align: top; }
 
