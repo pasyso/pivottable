@@ -47,7 +47,8 @@
         openAsImage: "Открыть как изображение",
         b_true: "ИСТИНА",
         b_false: "ЛОЖЬ",
-        no_data: "Нет данных"
+        no_data: "Нет данных",
+        exportXlsx: "Экспортировать как XLSX"
       },
       rendererTrans: {
         "Table": "Таблица",

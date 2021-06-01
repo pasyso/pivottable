@@ -6,7 +6,7 @@ callWithJQuery = (pivotModule) ->
     # Plain browser env
     else
         pivotModule jQuery
-        
+    
 callWithJQuery ($) ->
     nf = $.pivotUtilities.numberFormat
     tpl = $.pivotUtilities.aggregatorTemplates
@@ -33,6 +33,7 @@ callWithJQuery ($) ->
             b_true: "ИСТИНА"
             b_false: "ЛОЖЬ"
             no_data: "Нет данных"
+            exportXlsx: "Экспортировать как XLSX"
         rendererTrans:
             "Table":          "Таблица"
             "Table Barchart": "График столбцы"

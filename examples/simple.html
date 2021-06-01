@@ -5,6 +5,12 @@
         <!-- external libs from cdnjs -->
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <!--<script type="text/javascript" src="//unpkg.com/xlsx@0.15.2/dist/shim.min.js"></script>-->
+        <!--<script type="text/javascript" src="//unpkg.com/xlsx@0.15.2/dist/xlsx.full.min.js"></script>-->
+        <script type="text/javascript" src="./xlsx.full.min.js"></script>
+
         <!-- PivotTable.js libs from ../dist -->
         <link rel="stylesheet" type="text/css" href="../dist/pivot.css">
         <script type="text/javascript" src="../dist/pivot.js"></script>
@@ -26,6 +32,7 @@
                 {color: "red", shape: "triangle"}
             ],
             {
+                rendererOptions: {xlsx: XLSX},
                 rows: ["color"],
                 cols: ["shape"]
             }

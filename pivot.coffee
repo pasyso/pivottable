@@ -6,7 +6,129 @@ callWithJQuery = (pivotModule) ->
     # Plain browser env
     else
         pivotModule jQuery
-        
+
+applyStyleToRange = (xlsx, ws, range, style) ->
+  for R in [range.s.r..range.e.r]
+    for C in [range.s.c..range.e.c]
+        cell_address = {c:C, r:R}
+        #/* if an A1-style address is needed, encode the address */
+        cell_ref = xlsx.utils.encode_cell(cell_address)
+        cell = ws[cell_ref]
+        if cell
+            cell.s = if cell.s then jQuery.extend(true, jQuery.extend(true, {}, cell.s), style) else style
+            if cell.t == 'z'
+                cell.t = 's'
+        else
+            ws[cell_ref] = {s:style, v:'', t:'s'}
+
+dataTableToXlsx = (xlsx, table, pivotData, opts) ->
+    ws = xlsx.utils.table_to_sheet(table, {cellStyles: true})
+    colAttrs = pivotData.colAttrs
+    rowAttrs = pivotData.rowAttrs
+    rowKeys = pivotData.getRowKeys()
+    colKeys = pivotData.getColKeys()
+
+    #style1 = {
+    #    fill: {
+    #        type:'pattern',
+    #        pattern: "solid",
+    #        fgColor: { rgb: "3465a4" }
+    #    },
+    #    border: {
+    #        top: { style: 'thin', color: '000000'}
+    #    },
+    #    font: {
+    #        color: { rgb: 'ffffff'},
+    #        sz: 11
+    #    }
+    #}
+
+    style2 = {
+        fill: {
+            type:'pattern',
+            pattern: "solid",
+            fgColor: { rgb: "dddddd" }
+        },
+        font: {
+            sz: 11
+        },
+        alignment: {
+            wrapText: true
+        }
+    }
+    style_body = {
+        fill: {
+            type:'pattern',
+            pattern: "solid",
+            fgColor: { rgb: "ffffff" }
+        },
+        font: {
+            sz: 11
+        }
+    }
+    style_total_row = {
+        border: {
+            top: { style: 'thin', color: '000000'},
+            bottom: { style: 'thin', color: '000000'}
+        },
+        font: {
+            sz: 11,
+            bold: true
+        }
+    }
+    style_total_col = {
+        border: {
+            left: { style: 'thin', color: '000000'},
+            right: { style: 'thin', color: '000000'}
+        },
+        font: {
+            sz: 11,
+            bold: true
+        }
+    }
+
+    #  cols_len = dataArr[0].length;
+    #  rows_len = dataArr.length+title_rows_len-1;
+
+    headerRowsLen = colAttrs.length + if rowAttrs.length > 0 then 1 else 0
+    headerColsLen = rowAttrs.length + if colAttrs.length > 0 then 1 else 0
+    #cols header
+    applyStyleToRange(xlsx, ws, { s: {r: 0, c: 0}, e: {r: colAttrs.length, c: headerColsLen+colKeys.length}}, style2)
+    applyStyleToRange(xlsx, ws, { s: {r: 0, c: 0}, e: {r: 0, c: headerColsLen+colKeys.length}}, {border: {top: { style: 'thin', color: '000000'}}})
+    applyStyleToRange(xlsx, ws, { s: {r: colAttrs.length, c: 0}, e: {r: colAttrs.length, c: headerColsLen+colKeys.length}}, {border: {bottom: { style: 'thin', color: '000000'}}})
+    #rows header
+    applyStyleToRange(xlsx, ws, { s: {r: 0, c: 0}, e: {r: headerRowsLen+rowKeys.length, c: rowAttrs.length}}, style2)
+    applyStyleToRange(xlsx, ws, { s: {r: 0, c: 0}, e: {r: headerRowsLen+rowKeys.length, c: 0}}, {border: {left: { style: 'thin', color: '000000'}}})
+    applyStyleToRange(xlsx, ws, { s: {r: 0, c: rowAttrs.length}, e: {r: headerRowsLen+rowKeys.length, c: rowAttrs.length}}, {border: {right: { style: 'thin', color: '000000'}}})
+
+    applyStyleToRange(xlsx, ws, { s: {r: 0, c: 0}, e: {r: colAttrs.length, c: rowAttrs.length}}, {font: {sz: 11, bold: true}})
+    #body
+    applyStyleToRange(xlsx, ws, { s: {r: colAttrs.length+1, c: rowAttrs.length+1}, e: {r: headerRowsLen+rowKeys.length, c: headerColsLen+colKeys.length}}, style_body);
+    #totals
+    applyStyleToRange(xlsx, ws, { s: {r: headerRowsLen+rowKeys.length, c: 0}, e: {r: headerRowsLen+rowKeys.length, c: headerColsLen+colKeys.length}}, style_total_row)
+    applyStyleToRange(xlsx, ws, { s: {r: 0, c: headerColsLen+colKeys.length}, e: {r: headerRowsLen+rowKeys.length, c: headerColsLen+colKeys.length}}, style_total_col)
+
+    cols = []
+    for k in rowAttrs
+        t = $.pivotUtilities.getTranslation(k, opts.dataTrans)
+        cols.push({wch: t.length})
+    m = 0
+    for k in colAttrs
+        t = $.pivotUtilities.getTranslation(k, opts.dataTrans)
+        m = Math.max(m, t.length)
+    if (colAttrs.length > 0)
+        cols.push({wch: m})
+    ws['!cols'] = cols;
+
+    return ws
+
+writeXlsxFile = (xlsx, table, pivotData, opts) ->
+    wb = xlsx.utils.book_new()
+    ws = dataTableToXlsx(xlsx, table, pivotData, opts)
+#    ws = xlsx.utils.table_to_sheet(table)
+    xlsx.utils.book_append_sheet(wb, ws, 'Sheet1')
+    xlsx.writeFile(wb, 'pivot.xlsx', {cellStyles:true})
+
 callWithJQuery ($) ->
 
     ###
@@ -23,8 +145,8 @@ callWithJQuery ($) ->
         return x1 + x2
 
     numberFormat = (opts) ->
-        defaults = 
-            digitsAfterDecimal: 2, scaler: 1, 
+        defaults =
+            digitsAfterDecimal: 2, scaler: 1,
             thousandsSep: ",", decimalSep: "."
             prefix: "", suffix: ""
             showZero: false
@@ -79,7 +201,7 @@ callWithJQuery ($) ->
 
         max: (formatter=usFmt) -> ([attr]) -> (data, rowKey, colKey) ->
             val: null
-            push: (record) -> 
+            push: (record) ->
                 x = parseFloat(record[attr])
                 if not isNaN x then @val = Math.max(x, @val ? x)
             value: -> @val
@@ -130,7 +252,7 @@ callWithJQuery ($) ->
             numInputs: wrapped(x...)().numInputs
 
     #default aggregators & renderers use US naming and number formatting
-    aggregators = do (tpl = aggregatorTemplates) -> 
+    aggregators = do (tpl = aggregatorTemplates) ->
         "Count":                tpl.count(usFmtInt)
         "Count Unique Values":  tpl.countUnique(usFmtInt)
         "List Unique Values":   tpl.listUnique(", ")
@@ -150,17 +272,17 @@ callWithJQuery ($) ->
         "Count as Fraction of Columns": tpl.fractionOf(tpl.count(), "col",   usFmtPct)
 
     renderers =
-        "Table":          (pvtData, opts) ->   pivotTableRenderer(pvtData, opts)
+        "Table":          (pvtData, opts) ->   pivotTableRendererXlsx(pvtData, opts)
         "Table Barchart": (pvtData, opts) -> $(pivotTableRenderer(pvtData, opts)).barchart()
         "Heatmap":        (pvtData, opts) -> $(pivotTableRenderer(pvtData, opts)).heatmap()
         "Row Heatmap":    (pvtData, opts) -> $(pivotTableRenderer(pvtData, opts)).heatmap("rowheatmap")
         "Col Heatmap":    (pvtData, opts) -> $(pivotTableRenderer(pvtData, opts)).heatmap("colheatmap")
 
-    locales = 
-        en: 
+    locales =
+        en:
 #            aggregators: aggregators
 #            renderers: renderers
-            localeStrings: 
+            localeStrings:
                 renderError: "An error occurred rendering the PivotTable results."
                 computeError: "An error occurred computing the PivotTable results."
                 uiRenderError: "An error occurred rendering the PivotTable UI."
@@ -249,7 +371,7 @@ callWithJQuery ($) ->
                     return (if a1 > b1 then 1 else -1)
         a.length - b.length
 
-    sortAs = (order) -> 
+    sortAs = (order) ->
         mapping = {}
         for i, x of order
             mapping[x] = i
@@ -266,7 +388,7 @@ callWithJQuery ($) ->
     getSort = (sorters, attr) ->
         sort = sorters(attr)
         if $.isFunction(sort)
-            return sort 
+            return sort
         else
             return naturalSort
 
@@ -289,13 +411,13 @@ callWithJQuery ($) ->
         else
             k_name = k
         return k_name
-                
+
     getValueTranslation = (data, dataTrans) ->
         if !dataTrans?
             return data
         else
             return if $.isArray(data) then data.map (key)-> _getValueTranslation(key, dataTrans) else _getValueTranslation(data, dataTrans)
-                                
+
     ###
     Data Model class
     ###
@@ -319,13 +441,13 @@ callWithJQuery ($) ->
             # iterate through input, accumulating data for cells
             PivotData.forEachRecord input, opts.derivedAttributes, (record) =>
                 @processRecord(record) if opts.filter(record)
-                
+
         #can handle arrays or jQuery selections of tables
         @forEachRecord = (input, derivedAttributes, f) ->
             if $.isEmptyObject derivedAttributes
                 addRecord = f
             else
-                addRecord = (record) -> 
+                addRecord = (record) ->
                     record[k] = v(record) ? record[k] for k, v of derivedAttributes
                     f(record)
 
@@ -356,9 +478,9 @@ callWithJQuery ($) ->
             PivotData.forEachRecord input, {}, (record) -> result.push record
             return result
 
-        arrSort: (attrs) => 
+        arrSort: (attrs) =>
             sortersArr = (getSort(@sorters, a) for a in attrs)
-            (a,b) -> 
+            (a,b) ->
                 for own i, sorter of sortersArr
                     comparison = sorter(a[i], b[i])
                     return comparison if comparison != 0
@@ -381,7 +503,7 @@ callWithJQuery ($) ->
         processRecord: (record) -> #this code is called in a tight loop
             colKey = []
             rowKey = []
-            colKey.push record[x] ? "null" for x in @colAttrs 
+            colKey.push record[x] ? "null" for x in @colAttrs
             rowKey.push record[x] ? "null" for x in @rowAttrs
             flatRowKey = rowKey.join(String.fromCharCode(0))
             flatColKey = colKey.join(String.fromCharCode(0))
@@ -502,7 +624,7 @@ callWithJQuery ($) ->
                 th.className = "pvtAxisLabel"
                 #th.textContent = r
                 th.textContent = $.pivotUtilities.getTranslation(r, opts.dataTrans)
-                tr.appendChild th 
+                tr.appendChild th
             th = document.createElement("th")
             if colAttrs.length ==0
                 th.className = "pvtTotalLabel"
@@ -573,6 +695,20 @@ callWithJQuery ($) ->
 
         return result
 
+    pivotTableRendererXlsx = (pivotData, opts) ->
+        result = pivotTableRenderer(pivotData, opts)
+        if opts && opts.xlsx && pivotData.rowAttrs.length + pivotData.colAttrs.length > 0
+            defaults =
+                localeStrings:
+                    exportXlsx: "Export as XLSX"
+            opts = $.extend defaults, opts
+            tableHolder = result
+            xlsBtn = $("<a class=\"btn btn-sm btn-default\">#{opts.localeStrings.exportXlsx}</a>")
+            result = $("<div>").append($("<div>").append(xlsBtn).css('margin-bottom', '5px')).append(tableHolder)
+            xlsBtn.bind "click", ->
+                writeXlsxFile(opts.xlsx, tableHolder, pivotData, opts)
+        return result
+
     ###
     Pivot Table core: create PivotData object and call Renderer on it
     ###
@@ -585,9 +721,9 @@ callWithJQuery ($) ->
             filter: -> true
             aggregator: aggregatorTemplates.count()()
             aggregatorName: "Count"
-            sorters: -> 
+            sorters: ->
             derivedAttributes: {},
-            renderer: pivotTableRenderer
+            renderer: pivotTableRendererXlsx
             rendererOptions: null
             localeStrings: locales.en.localeStrings
 
@@ -603,7 +739,7 @@ callWithJQuery ($) ->
         catch e
             console.error(e.stack) if console?
             result = $("<span>").html opts.localeStrings.computeError
-        
+
         x = this[0]
         x.removeChild(x.lastChild) while x.hasChildNodes()
         return @append result
@@ -631,7 +767,7 @@ callWithJQuery ($) ->
             rendererOptions: localeStrings: locales[locale].localeStrings, lang: locale
             onRefresh: null
             filter: -> true
-            sorters: -> 
+            sorters: ->
             localeStrings: locales[locale].localeStrings
 #            rendererTrans: locales[locale].rendererTrans
 #            aggregatorTrans: locales[locale].aggregatorTrans
@@ -645,6 +781,9 @@ callWithJQuery ($) ->
             if opts.dataTrans?
                 opts.rendererOptions.dataTrans = opts.dataTrans
                 delete opts.dataTrans
+            if opts.xlsx?
+                opts.rendererOptions.xlsx = opts.xlsx
+                delete opts.xlsx
 
 #            console.log('pivotUI',opts)
             #cache the input in some useful form

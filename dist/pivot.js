@@ -1,5 +1,5 @@
 (function() {
-  var callWithJQuery,
+  var applyStyleToRange, callWithJQuery, dataTableToXlsx, writeXlsxFile,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     slice = [].slice,
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -15,12 +15,283 @@
     }
   };
 
+  applyStyleToRange = function(xlsx, ws, range, style) {
+    var C, R, cell, cell_address, cell_ref, l, ref, ref1, results;
+    results = [];
+    for (R = l = ref = range.s.r, ref1 = range.e.r; ref <= ref1 ? l <= ref1 : l >= ref1; R = ref <= ref1 ? ++l : --l) {
+      results.push((function() {
+        var n, ref2, ref3, results1;
+        results1 = [];
+        for (C = n = ref2 = range.s.c, ref3 = range.e.c; ref2 <= ref3 ? n <= ref3 : n >= ref3; C = ref2 <= ref3 ? ++n : --n) {
+          cell_address = {
+            c: C,
+            r: R
+          };
+          cell_ref = xlsx.utils.encode_cell(cell_address);
+          cell = ws[cell_ref];
+          if (cell) {
+            cell.s = cell.s ? jQuery.extend(true, jQuery.extend(true, {}, cell.s), style) : style;
+            if (cell.t === 'z') {
+              results1.push(cell.t = 's');
+            } else {
+              results1.push(void 0);
+            }
+          } else {
+            results1.push(ws[cell_ref] = {
+              s: style,
+              v: '',
+              t: 's'
+            });
+          }
+        }
+        return results1;
+      })());
+    }
+    return results;
+  };
+
+  dataTableToXlsx = function(xlsx, table, pivotData, opts) {
+    var colAttrs, colKeys, cols, headerColsLen, headerRowsLen, k, l, len1, len2, m, n, rowAttrs, rowKeys, style2, style_body, style_total_col, style_total_row, t, ws;
+    ws = xlsx.utils.table_to_sheet(table, {
+      cellStyles: true
+    });
+    colAttrs = pivotData.colAttrs;
+    rowAttrs = pivotData.rowAttrs;
+    rowKeys = pivotData.getRowKeys();
+    colKeys = pivotData.getColKeys();
+    style2 = {
+      fill: {
+        type: 'pattern',
+        pattern: "solid",
+        fgColor: {
+          rgb: "dddddd"
+        }
+      },
+      font: {
+        sz: 11
+      },
+      alignment: {
+        wrapText: true
+      }
+    };
+    style_body = {
+      fill: {
+        type: 'pattern',
+        pattern: "solid",
+        fgColor: {
+          rgb: "ffffff"
+        }
+      },
+      font: {
+        sz: 11
+      }
+    };
+    style_total_row = {
+      border: {
+        top: {
+          style: 'thin',
+          color: '000000'
+        },
+        bottom: {
+          style: 'thin',
+          color: '000000'
+        }
+      },
+      font: {
+        sz: 11,
+        bold: true
+      }
+    };
+    style_total_col = {
+      border: {
+        left: {
+          style: 'thin',
+          color: '000000'
+        },
+        right: {
+          style: 'thin',
+          color: '000000'
+        }
+      },
+      font: {
+        sz: 11,
+        bold: true
+      }
+    };
+    headerRowsLen = colAttrs.length + (rowAttrs.length > 0 ? 1 : 0);
+    headerColsLen = rowAttrs.length + (colAttrs.length > 0 ? 1 : 0);
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: 0,
+        c: 0
+      },
+      e: {
+        r: colAttrs.length,
+        c: headerColsLen + colKeys.length
+      }
+    }, style2);
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: 0,
+        c: 0
+      },
+      e: {
+        r: 0,
+        c: headerColsLen + colKeys.length
+      }
+    }, {
+      border: {
+        top: {
+          style: 'thin',
+          color: '000000'
+        }
+      }
+    });
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: colAttrs.length,
+        c: 0
+      },
+      e: {
+        r: colAttrs.length,
+        c: headerColsLen + colKeys.length
+      }
+    }, {
+      border: {
+        bottom: {
+          style: 'thin',
+          color: '000000'
+        }
+      }
+    });
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: 0,
+        c: 0
+      },
+      e: {
+        r: headerRowsLen + rowKeys.length,
+        c: rowAttrs.length
+      }
+    }, style2);
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: 0,
+        c: 0
+      },
+      e: {
+        r: headerRowsLen + rowKeys.length,
+        c: 0
+      }
+    }, {
+      border: {
+        left: {
+          style: 'thin',
+          color: '000000'
+        }
+      }
+    });
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: 0,
+        c: rowAttrs.length
+      },
+      e: {
+        r: headerRowsLen + rowKeys.length,
+        c: rowAttrs.length
+      }
+    }, {
+      border: {
+        right: {
+          style: 'thin',
+          color: '000000'
+        }
+      }
+    });
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: 0,
+        c: 0
+      },
+      e: {
+        r: colAttrs.length,
+        c: rowAttrs.length
+      }
+    }, {
+      font: {
+        sz: 11,
+        bold: true
+      }
+    });
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: colAttrs.length + 1,
+        c: rowAttrs.length + 1
+      },
+      e: {
+        r: headerRowsLen + rowKeys.length,
+        c: headerColsLen + colKeys.length
+      }
+    }, style_body);
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: headerRowsLen + rowKeys.length,
+        c: 0
+      },
+      e: {
+        r: headerRowsLen + rowKeys.length,
+        c: headerColsLen + colKeys.length
+      }
+    }, style_total_row);
+    applyStyleToRange(xlsx, ws, {
+      s: {
+        r: 0,
+        c: headerColsLen + colKeys.length
+      },
+      e: {
+        r: headerRowsLen + rowKeys.length,
+        c: headerColsLen + colKeys.length
+      }
+    }, style_total_col);
+    cols = [];
+    for (l = 0, len1 = rowAttrs.length; l < len1; l++) {
+      k = rowAttrs[l];
+      t = $.pivotUtilities.getTranslation(k, opts.dataTrans);
+      cols.push({
+        wch: t.length
+      });
+    }
+    m = 0;
+    for (n = 0, len2 = colAttrs.length; n < len2; n++) {
+      k = colAttrs[n];
+      t = $.pivotUtilities.getTranslation(k, opts.dataTrans);
+      m = Math.max(m, t.length);
+    }
+    if (colAttrs.length > 0) {
+      cols.push({
+        wch: m
+      });
+    }
+    ws['!cols'] = cols;
+    return ws;
+  };
+
+  writeXlsxFile = function(xlsx, table, pivotData, opts) {
+    var wb, ws;
+    wb = xlsx.utils.book_new();
+    ws = dataTableToXlsx(xlsx, table, pivotData, opts);
+    xlsx.utils.book_append_sheet(wb, ws, 'Sheet1');
+    return xlsx.writeFile(wb, 'pivot.xlsx', {
+      cellStyles: true
+    });
+  };
+
   callWithJQuery(function($) {
 
     /*
     Utilities
      */
-    var PivotData, _getValueTranslation, addSeparators, aggregatorTemplates, aggregators, dayNamesEn, derivers, getSort, getTranslation, getValueTranslation, locales, mthNamesEn, naturalSort, numberFormat, pivotTableRenderer, renderers, sortAs, usFmt, usFmtInt, usFmtPct, zeroPad;
+    var PivotData, _getValueTranslation, addSeparators, aggregatorTemplates, aggregators, dayNamesEn, derivers, getSort, getTranslation, getValueTranslation, locales, mthNamesEn, naturalSort, numberFormat, pivotTableRenderer, pivotTableRendererXlsx, renderers, sortAs, usFmt, usFmtInt, usFmtPct, zeroPad;
     addSeparators = function(nStr, thousandsSep, decimalSep) {
       var rgx, x, x1, x2;
       nStr += '';
@@ -352,7 +623,7 @@
     })(aggregatorTemplates);
     renderers = {
       "Table": function(pvtData, opts) {
-        return pivotTableRenderer(pvtData, opts);
+        return pivotTableRendererXlsx(pvtData, opts);
       },
       "Table Barchart": function(pvtData, opts) {
         return $(pivotTableRenderer(pvtData, opts)).barchart();
@@ -982,6 +1253,25 @@
       result.setAttribute("data-numcols", colKeys.length);
       return result;
     };
+    pivotTableRendererXlsx = function(pivotData, opts) {
+      var defaults, result, tableHolder, xlsBtn;
+      result = pivotTableRenderer(pivotData, opts);
+      if (opts && opts.xlsx && pivotData.rowAttrs.length + pivotData.colAttrs.length > 0) {
+        defaults = {
+          localeStrings: {
+            exportXlsx: "Export as XLSX"
+          }
+        };
+        opts = $.extend(defaults, opts);
+        tableHolder = result;
+        xlsBtn = $("<a class=\"btn btn-sm btn-default\">" + opts.localeStrings.exportXlsx + "</a>");
+        result = $("<div>").append($("<div>").append(xlsBtn).css('margin-bottom', '5px')).append(tableHolder);
+        xlsBtn.bind("click", function() {
+          return writeXlsxFile(opts.xlsx, tableHolder, pivotData, opts);
+        });
+      }
+      return result;
+    };
 
     /*
     Pivot Table core: create PivotData object and call Renderer on it
@@ -999,7 +1289,7 @@
         aggregatorName: "Count",
         sorters: function() {},
         derivedAttributes: {},
-        renderer: pivotTableRenderer,
+        renderer: pivotTableRendererXlsx,
         rendererOptions: null,
         localeStrings: locales.en.localeStrings
       };
@@ -1079,6 +1369,10 @@
         if (opts.dataTrans != null) {
           opts.rendererOptions.dataTrans = opts.dataTrans;
           delete opts.dataTrans;
+        }
+        if (opts.xlsx != null) {
+          opts.rendererOptions.xlsx = opts.xlsx;
+          delete opts.xlsx;
         }
         input = PivotData.convertToArray(input);
         tblCols = (function() {
@@ -1312,7 +1606,7 @@
         initialRender = true;
         refreshDelayed = (function(_this) {
           return function() {
-            var attr, attr_name, exclusions, inclusions, len5, newDropdown, numInputsToProcess, pivotUIOptions, pvtVals, ref5, ref6, s, subopts, t, unusedAttrsContainer, vals;
+            var attr, attr_name, exclusions, inclusions, len5, newDropdown, numInputsToProcess, pivotUIOptions, pvtVals, ref5, ref6, s, subopts, u, unusedAttrsContainer, vals;
             subopts = {
               derivedAttributes: opts.derivedAttributes,
               localeStrings: opts.localeStrings,
@@ -1345,8 +1639,8 @@
                 newDropdown = $("<select>").addClass('pvtAttrDropdown').append($("<option>")).bind("change", function() {
                   return refresh();
                 });
-                for (t = 0, len5 = shownAttributes.length; t < len5; t++) {
-                  attr = shownAttributes[t];
+                for (u = 0, len5 = shownAttributes.length; u < len5; u++) {
+                  attr = shownAttributes[u];
                   attr_name = $.pivotUtilities.getTranslation(attr, opts.rendererOptions.dataTrans);
                   newDropdown.append($("<option>").val(attr).text(attr_name));
                 }
