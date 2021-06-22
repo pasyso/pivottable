@@ -33,6 +33,9 @@ callWithJQuery ($) ->
             b_true: "ИСТИНА"
             b_false: "ЛОЖЬ"
             no_data: "Нет данных"
+            b_null: "Нет данных"
+            yes: "Да"
+            no: "Нет"            
             exportXlsx: "Экспортировать как XLSX"
         rendererTrans:
             "Table":          "Таблица"

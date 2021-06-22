@@ -654,7 +654,10 @@
           and: "and",
           b_true: "TRUE",
           b_false: "FALSE",
-          no_data: "No data"
+          no_data: "No data",
+          b_null: "NULL",
+          yes: "Yes",
+          no: "No"
         },
         rendererTrans: {
           "Table": "Table",
@@ -831,12 +834,21 @@
       if (dataTrans == null) {
         return k;
       }
+      if (dataTrans[k] != null) {
+        return dataTrans[k];
+      }
       if (k === true || k === 'true') {
         k_name = dataTrans.b_true;
       } else if (k === false || k === 'false') {
         k_name = dataTrans.b_false;
       } else if (k === '') {
         k_name = dataTrans.no_data;
+      } else if (k === null || k === 'null') {
+        k_name = dataTrans.b_null;
+      } else if (k === 'Yes' || k === 'yes') {
+        k_name = dataTrans.yes;
+      } else if (k === 'No' || k === 'no') {
+        k_name = dataTrans.no;
       } else {
         k_name = k;
       }
@@ -1361,7 +1373,7 @@
       };
       existingOpts = this.data("pivotUIOptions");
       if ((existingOpts == null) || overwrite) {
-        opts = $.extend(defaults, inputOpts);
+        opts = $.extend(true, defaults, inputOpts);
       } else {
         opts = existingOpts;
       }
